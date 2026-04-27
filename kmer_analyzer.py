@@ -45,15 +45,16 @@ def update_kmer_count(kmer_data, kmer, next_char):
     # Initialize storage for a k-mer the first time we encounter it.
     if kmer not in kmer_data:
         kmer_data[kmer] = {'count': 1, 'next_chars': {}}
+    # If the k-mer is already in the dictionary, increase the count.
+    else:
+        kmer_data[kmer]['count'] += 1
     
-    # Increase total observations for this k-mer.
-    kmer_data[kmer]['count'] += 1
-    
-    # Initialize count bucket for this following character when needed.
+    # Initialize count bucket for this following character if it doesn't exist.
     if next_char not in kmer_data[kmer]['next_chars']:
-        kmer_data[kmer]['next_chars'][next_char] = 0
-    # Record this specific next-character observation.
-    kmer_data[kmer]['next_chars'][next_char] += 1
+        kmer_data[kmer]['next_chars'][next_char] = 1
+    # If the next-character is already in the dictionary, increase the count.
+    else:
+        kmer_data[kmer]['next_chars'][next_char] += 1
 
     # Return the updated dictionary so callers can chain/use the result.
     return kmer_data
