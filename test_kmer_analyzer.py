@@ -185,63 +185,6 @@ class TestCountKmersWithContext:
 
     def test_repeated_kmer_count(self):
         """A kmer appearing multiple times should have the correct count"""
-        result = count_kmers_with_context("ATGAT", 2)
-        assert result["AT"]["count"] == 2
-
-    def test_repeated_kmer_same_next_char(self):
-        """Repeated kmer with the same next char should accumulate frequency"""
-        result = count_kmers_with_context("ATGATG", 2)
-        assert result["AT"]["next_chars"]["G"] == 2
-
-    def test_repeated_kmer_different_next_chars(self):
-        """Same kmer followed by different chars should track both"""
-        result = count_kmers_with_context("ATATC", 2)
-        assert result["AT"]["next_chars"]["A"] == 1
-        assert result["AT"]["next_chars"]["C"] == 1
-
-    def test_last_kmer_excluded(self):
-        """The final kmer in a sequence has no following character and should not appear"""
-        result = count_kmers_with_context("ATGC", 2)
-        assert "GC" not in result
-
-    # --- k equals sequence length ---
-    def test_k_equals_sequence_length(self):
-        """When k equals sequence length there are no valid kmers with a following char"""
-        result = count_kmers_with_context("ATG", 3)
-        assert result == {}
-
-    # --- k = 1 ---
-    def test_k_equals_one(self):
-        """k=1 should treat each single nucleotide as a kmer"""
-        result = count_kmers_with_context("ATGC", 1)
-        assert set(result.keys()) == {"A", "T", "G"}
-        assert result["A"]["next_chars"] == {"T": 1}
-
-class TestCountKmersWithContext:
-    # --- Basic behavior ---
-    def test_returns_dict(self):
-        """Should return a dictionary"""
-        result = count_kmers_with_context("ATGC", 2)
-        assert isinstance(result, dict)
-
-    def test_correct_kmers_extracted(self):
-        """Should extract the correct set of kmers from a sequence"""
-        result = count_kmers_with_context("ATGC", 2)
-        assert set(result.keys()) == {"AT", "TG"}
-
-    def test_kmer_count_single_occurrence(self):
-        """A kmer appearing once should have count 1"""
-        result = count_kmers_with_context("ATGC", 2)
-        assert result["AT"]["count"] == 1
-
-    def test_next_char_recorded_correctly(self):
-        """The character following each kmer should be recorded"""
-        result = count_kmers_with_context("ATGC", 2)
-        assert result["AT"]["next_chars"] == {"G": 1}
-        assert result["TG"]["next_chars"] == {"C": 1}
-
-    def test_repeated_kmer_count(self):
-        """A kmer appearing multiple times should have the correct count"""
         result = count_kmers_with_context("ATGATG", 2)
         assert result["AT"]["count"] == 2
 
@@ -385,5 +328,31 @@ class TestMain:
         sys.argv = ["kmer_analyzer.py", str(input_file), "2", str(output_file)]
         main()
         
+        lines = output_file.read_text().strip().split("\n")
+        assert "AT 2 G:2" in lines
+
+    def test_skips_invalid_sequences_but_keeps_valid_ones(self, tmp_path):
+        """Invalid lines should be skipped while valid lines still contribute."""
+        input_file = tmp_path / "input.txt"
+        output_file = tmp_path / "output.txt"
+        input_file.write_text("ATG\nATX\nATG\n")
+
+        import sys
+        sys.argv = ["kmer_analyzer.py", str(input_file), "2", str(output_file)]
+        main()
+
+        lines = output_file.read_text().strip().split("\n")
+        assert "AT 2 G:2" in lines
+
+    def test_processes_lowercase_input_in_main_flow(self, tmp_path):
+        """Lowercase input lines should be normalized and processed."""
+        input_file = tmp_path / "input.txt"
+        output_file = tmp_path / "output.txt"
+        input_file.write_text("atg\natg\n")
+
+        import sys
+        sys.argv = ["kmer_analyzer.py", str(input_file), "2", str(output_file)]
+        main()
+
         lines = output_file.read_text().strip().split("\n")
         assert "AT 2 G:2" in lines
