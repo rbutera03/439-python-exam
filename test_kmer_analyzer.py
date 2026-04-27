@@ -69,3 +69,74 @@ class TestValidateSequence:
     def test_sequence_with_multiple_invalid_letters_and_spaces(self):
         """Multiple invalid letters and spaces should make a sequence invalid"""
         assert validate_sequence("ATGX C", 2) == False
+        
+class TestUpdateKmerCount:
+    # --- New kmer ---
+    def test_new_kmer_is_added(self):
+        """A kmer not yet in kmer_data should be added"""
+        kmer_data = {}
+        result = update_kmer_count(kmer_data, "AT", "G")
+        assert "AT" in result
+
+    def test_new_kmer_count_is_one(self):
+        """A brand new kmer should have a count of 1 — bug: will be 2"""
+        kmer_data = {}
+        result = update_kmer_count(kmer_data, "AT", "G")
+        assert result["AT"]["count"] == 1
+
+    def test_new_kmer_next_char_recorded(self):
+        """Next character after a new kmer should be recorded with frequency 1"""
+        kmer_data = {}
+        result = update_kmer_count(kmer_data, "AT", "G")
+        assert result["AT"]["next_chars"]["G"] == 1
+
+    # --- Existing kmer, same next char ---
+    def test_existing_kmer_count_increments(self):
+        """Seeing the same kmer twice should give count of 2"""
+        kmer_data = {}
+        update_kmer_count(kmer_data, "AT", "G")
+        result = update_kmer_count(kmer_data, "AT", "G")
+        assert result["AT"]["count"] == 2
+
+    def test_existing_kmer_next_char_increments(self):
+        """Seeing the same kmer+next_char twice should give next_char frequency 2"""
+        kmer_data = {}
+        update_kmer_count(kmer_data, "AT", "G")
+        result = update_kmer_count(kmer_data, "AT", "G")
+        assert result["AT"]["next_chars"]["G"] == 2
+
+    # --- Existing kmer, different next char ---
+    def test_existing_kmer_new_next_char(self):
+        """Same kmer followed by a different character should add a new next_char entry"""
+        kmer_data = {}
+        update_kmer_count(kmer_data, "AT", "G")
+        result = update_kmer_count(kmer_data, "AT", "C")
+        assert "C" in result["AT"]["next_chars"]
+
+    def test_existing_kmer_different_next_chars_tracked_separately(self):
+        """Two different next chars for the same kmer should each have frequency 1"""
+        kmer_data = {}
+        update_kmer_count(kmer_data, "AT", "G")
+        result = update_kmer_count(kmer_data, "AT", "C")
+        assert result["AT"]["next_chars"]["G"] == 1
+        assert result["AT"]["next_chars"]["C"] == 1
+
+    # --- Multiple kmers ---
+    def test_multiple_different_kmers_tracked_independently(self):
+        """Different kmers should not affect each other's counts"""
+        kmer_data = {}
+        update_kmer_count(kmer_data, "AT", "G")
+        result = update_kmer_count(kmer_data, "TG", "C")
+        assert "AT" in result
+        assert "TG" in result
+        assert result["AT"]["count"] == 1  # will fail due to off-by-one bug
+        assert result["TG"]["count"] == 1  # will fail due to off-by-one bug
+
+    # --- Return value ---
+    def test_returns_kmer_data_dict(self):
+        """Function should return the kmer_data dictionary"""
+        kmer_data = {}
+        result = update_kmer_count(kmer_data, "AT", "G")
+        assert isinstance(result, dict)
+
+
