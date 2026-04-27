@@ -23,7 +23,7 @@ def validate_sequence(sequence, k):
         return False
 
     # Scan each character and reject immediately if a digit is present.
-    for nucleotide in sequence:
+    for nucleotide in sequence.upper():
         if nucleotide not in 'ACGT':
             return False
 
