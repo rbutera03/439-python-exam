@@ -32,6 +32,10 @@ class TestValidateSequence:
         """Empty sequence should always be invalid"""
         assert validate_sequence("", 2) == False
         
+    def test_sequence_with_zero_k(self):
+        """k=0 is meaningless and should be invalid"""
+        assert validate_sequence("ATGC", 0) == False
+        
     def test_sequence_with_negative_k(self):
         """Negative k should be invalid"""
         assert validate_sequence("ATGC", -1) == False
@@ -69,6 +73,23 @@ class TestValidateSequence:
     def test_sequence_with_multiple_invalid_letters_and_spaces(self):
         """Multiple invalid letters and spaces should make a sequence invalid"""
         assert validate_sequence("ATGX C", 2) == False
+        
+    # --- Invalid types ---
+    def test_sequence_is_not_string(self):
+        """Non-string sequence should be invalid"""
+        assert validate_sequence(123, 2) == False
+
+    def test_k_is_not_int(self):
+        """Non-integer k should be invalid"""
+        assert validate_sequence("ATGC", 2.0) == False
+
+    def test_k_is_bool(self):
+        """Boolean k should be invalid"""
+        assert validate_sequence("ATGC", True) == False
+
+    def test_k_is_zero(self):
+        """k=0 is meaningless and should be invalid"""
+        assert validate_sequence("ATGC", 0) == False
         
 class TestUpdateKmerCount:
     # --- New kmer ---

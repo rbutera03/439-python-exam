@@ -10,15 +10,21 @@ def validate_sequence(sequence, k):
     Returns:
         bool: True when k is a positive integer, the sequence length is at
             least k, and every character in the sequence is a valid nucleotide
-            (A, C, G, or T, case-insensitive); otherwise False.
+            (A, C, G, or T, case-insensitive); otherwise False. 
     """
+    # Check if the sequence and k are the correct types
+    if not isinstance(sequence, str):
+        return False
+    if not isinstance(k, int) or isinstance(k, bool):
+        return False
+
     # A sequence must be at least k characters long to contain any k-mer.
-    if len(sequence) < k:
+    if k <= 0 or len(sequence) < k:
         return False
 
     # Scan each character and reject immediately if a digit is present.
-    for nucleotide in sequence:
-        if nucleotide in '1234567890':
+    for nucleotide in sequence.upper():
+        if nucleotide not in 'ACGT':
             return False
 
     # Sequence passed all checks performed by this function.
