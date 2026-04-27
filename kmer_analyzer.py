@@ -105,6 +105,8 @@ def write_results_to_file(kmer_data, output_filename):
     # Write one line per k-mer in the required text format.
     with open(output_filename, 'w') as f:
         for kmer in sorted_kmers:
+            # Read total frequency and per-k-mer following-character counts.
+            total_count = kmer_data[kmer]['count']
             # Read per-k-mer following-character counts.
             next_chars = kmer_data[kmer]['next_chars']
             
@@ -114,8 +116,8 @@ def write_results_to_file(kmer_data, output_filename):
                 for char, freq in sorted(next_chars.items())
             )
             
-            # Emit one output line containing the k-mer and its context frequencies.
-            f.write(f"{kmer} {next_char_str}\n")
+            # Emit one output line: kmer, total count, then context frequencies.
+            f.write(f"{kmer} {total_count} {next_char_str}\n")
 
 
 def main():
