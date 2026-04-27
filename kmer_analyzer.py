@@ -23,7 +23,7 @@ def validate_sequence(sequence, k):
         return False
 
     # Scan each character and reject immediately if a digit is present.
-    for nucleotide in sequence.upper():
+    for nucleotide in sequence:
         if nucleotide not in 'ACGT':
             return False
 
@@ -145,8 +145,8 @@ def main():
     # Process each sequence fragment from the input file.
     with open(sequence_file, 'r') as f:
         for sequence in f:
-            # Remove trailing whitespace/newline characters.
-            sequence = sequence.strip()
+            # Remove trailing whitespace/newline characters and convert to uppercase.
+            sequence = sequence.strip().upper()
             
             # Skip malformed sequences and continue processing remaining lines.
             if not validate_sequence(sequence, k):
