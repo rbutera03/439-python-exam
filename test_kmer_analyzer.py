@@ -150,8 +150,8 @@ class TestUpdateKmerCount:
         result = update_kmer_count(kmer_data, "TG", "C")
         assert "AT" in result
         assert "TG" in result
-        assert result["AT"]["count"] == 1  # will fail due to off-by-one bug
-        assert result["TG"]["count"] == 1  # will fail due to off-by-one bug
+        assert result["AT"]["count"] == 1  
+        assert result["TG"]["count"] == 1  
 
     # --- Return value ---
     def test_returns_kmer_data_dict(self):
@@ -184,24 +184,17 @@ class TestCountKmersWithContext:
         assert result["TG"]["next_chars"] == {"C": 1}
 
     def test_repeated_kmer_count(self):
-        """A kmer appearing multiple times should have the correct count — will fail due to off-by-one bug"""
-        # In ATGTA: TG appears at index 1 (next: T) only once
-        # AT appears at index 0 (next: G) and index 3 (next: A) — actually different next chars
-        # Use ATGAT: AT appears twice
+        """A kmer appearing multiple times should have the correct count"""
         result = count_kmers_with_context("ATGAT", 2)
         assert result["AT"]["count"] == 2
 
     def test_repeated_kmer_same_next_char(self):
         """Repeated kmer with the same next char should accumulate frequency"""
-        # ATGATG: AT -> G twice
         result = count_kmers_with_context("ATGATG", 2)
         assert result["AT"]["next_chars"]["G"] == 2
 
     def test_repeated_kmer_different_next_chars(self):
         """Same kmer followed by different chars should track both"""
-        # ATGTA: AT appears at 0 (next=G) and... let's use ATATG
-        # AT at 0 -> G, AT at 2 -> G... use ATACT: AT->A, ...
-        # Simplest: ATAGT — AT at 0 (next=A), no repeat. Use ATATC: AT->A, AT->C
         result = count_kmers_with_context("ATATC", 2)
         assert result["AT"]["next_chars"]["A"] == 1
         assert result["AT"]["next_chars"]["C"] == 1
@@ -248,24 +241,17 @@ class TestCountKmersWithContext:
         assert result["TG"]["next_chars"] == {"C": 1}
 
     def test_repeated_kmer_count(self):
-        """A kmer appearing multiple times should have the correct count — will fail due to off-by-one bug"""
-        # In ATGTA: TG appears at index 1 (next: T) only once
-        # AT appears at index 0 (next: G) and index 3 (next: A) — actually different next chars
-        # Use ATGAT: AT appears twice
-        result = count_kmers_with_context("ATGAT", 2)
+        """A kmer appearing multiple times should have the correct count"""
+        result = count_kmers_with_context("ATGATG", 2)
         assert result["AT"]["count"] == 2
 
     def test_repeated_kmer_same_next_char(self):
         """Repeated kmer with the same next char should accumulate frequency"""
-        # ATGATG: AT -> G twice
         result = count_kmers_with_context("ATGATG", 2)
         assert result["AT"]["next_chars"]["G"] == 2
 
     def test_repeated_kmer_different_next_chars(self):
         """Same kmer followed by different chars should track both"""
-        # ATGTA: AT appears at 0 (next=G) and... let's use ATATG
-        # AT at 0 -> G, AT at 2 -> G... use ATACT: AT->A, ...
-        # Simplest: ATAGT — AT at 0 (next=A), no repeat. Use ATATC: AT->A, AT->C
         result = count_kmers_with_context("ATATC", 2)
         assert result["AT"]["next_chars"]["A"] == 1
         assert result["AT"]["next_chars"]["C"] == 1
@@ -274,6 +260,12 @@ class TestCountKmersWithContext:
         """The final kmer in a sequence has no following character and should not appear"""
         result = count_kmers_with_context("ATGC", 2)
         assert "GC" not in result
+        
+    def test_kmer_with_no_following_char_not_counted(self):
+        """A kmer that only appears at the end of the sequence with no following
+        character should not be counted at all"""
+        result = count_kmers_with_context("ATGAT", 2)
+        assert result["AT"]["count"] == 1
 
     # --- k equals sequence length ---
     def test_k_equals_sequence_length(self):
