@@ -122,10 +122,10 @@ def write_results_to_file(kmer_data, output_filename):
 
 def main():
     """Run the command-line workflow for k-mer context analysis.
-
+    
     Parameters:
         None
-
+    
     Returns:
         None: Reads sequence fragments from the input file, validates each
             sequence, computes k-mer context frequencies, and writes the final
@@ -135,26 +135,41 @@ def main():
     sequence_file = sys.argv[1]
     k = int(sys.argv[2])
     output_file = sys.argv[3]
-    
+
     # Basic progress message for the user.
     print(f"Reading sequences from {sequence_file}...")
+
+    # Accumulate k-mer data across all sequences before writing.
+    kmer_data = {}
 
     # Process each sequence fragment from the input file.
     with open(sequence_file, 'r') as f:
         for sequence in f:
             # Remove trailing whitespace/newline characters.
             sequence = sequence.strip()
-
+            
             # Skip malformed sequences and continue processing remaining lines.
             if not validate_sequence(sequence, k):
                 print(f"  Warning: Skipping sequence")
                 continue
-            
-            # Count k-mers and following-character frequencies for this sequence.
-            kmer_data = count_kmers_with_context(sequence, k) 
-            
-            # Write formatted analysis output to the requested destination file.
-            write_results_to_file(kmer_data, output_file)
+
+            # Merge this sequence's k-mer counts into the running totals.
+            sequence_kmer_data = count_kmers_with_context(sequence, k)
+            for kmer, data in sequence_kmer_data.items():
+                if kmer not in kmer_data:
+                    kmer_data[kmer] = {'count': 0, 'next_chars': {}}
+
+                # Add the total count contributed by this sequence.
+                kmer_data[kmer]['count'] += data['count']
+
+                # Add each next-character frequency into the aggregate map.
+                for next_char, freq in data['next_chars'].items():
+                    if next_char not in kmer_data[kmer]['next_chars']:
+                        kmer_data[kmer]['next_chars'][next_char] = 0
+                    kmer_data[kmer]['next_chars'][next_char] += freq
+
+    # Write the final aggregated results once after all sequences are processed.
+    write_results_to_file(kmer_data, output_file)
 
 if __name__ == '__main__':
     main()

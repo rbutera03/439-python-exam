@@ -1,5 +1,5 @@
 import pytest
-from kmer_analyzer import validate_sequence, update_kmer_count, count_kmers_with_context, write_results_to_file
+from kmer_analyzer import validate_sequence, update_kmer_count, count_kmers_with_context, write_results_to_file, main
 
 class TestValidateSequence:
     # --- Valid sequences ---
@@ -372,3 +372,18 @@ class TestWriteResultsToFile:
         write_results_to_file(kmer_data, str(output_file))
         line = output_file.read_text().strip()
         assert line == "AT 100 C:40 G:60"
+        
+class TestMain:
+    def test_aggregates_across_sequences(self, tmp_path):
+        """Results from multiple sequences should be combined, not overwritten"""
+        input_file = tmp_path / "input.txt"
+        output_file = tmp_path / "output.txt"
+        # AT->G appears in both sequences, so count should be 2
+        input_file.write_text("ATG\nATG\n")
+        
+        import sys
+        sys.argv = ["kmer_analyzer.py", str(input_file), "2", str(output_file)]
+        main()
+        
+        lines = output_file.read_text().strip().split("\n")
+        assert "AT 2 G:2" in lines
