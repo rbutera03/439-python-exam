@@ -281,49 +281,94 @@ class TestCountKmersWithContext:
         assert result["A"]["next_chars"] == {"T": 1}
 
 class TestWriteResultsToFile:
-    def test_output_file_exact_formatting(self, tmp_path):
-        """
-        Verifies the exact line format: KMER TOTAL_COUNT CHAR:FREQ CHAR:FREQ
-        This ensures the 'Total Frequency' requirement from the rubric is met.
-        """
+    # --- Output format ---
+    def test_creates_output_file(self, tmp_path):
+        """Should create the output file"""
         output_file = tmp_path / "output.txt"
-        # Data representing: AT appears 3 times (2 followed by G, 1 followed by C)
-        kmer_data = {
-            "AT": {
-                "count": 3, 
-                "next_chars": {"G": 2, "C": 1}
-            }
-        }
-        
+        kmer_data = {"AT": {"count": 1, "next_chars": {"G": 1}}}
         write_results_to_file(kmer_data, str(output_file))
-        content = output_file.read_text().strip()
-        
-        # We expect: Kmer <space> TotalCount <space> SortedNextChars
-        # Note: The next_chars should be sorted alphabetically (C before G)
-        expected_line = "AT 3 C:1 G:2"
-        assert content == expected_line
+        assert output_file.exists()
 
-    def test_multiple_kmers_sorting_and_format(self, tmp_path):
-        """
-        Ensures multiple kmers are on separate lines and sorted alphabetically.
-        """
+    def test_single_kmer_single_next_char(self, tmp_path):
+        """Single kmer with one next char should produce correct line"""
+        output_file = tmp_path / "output.txt"
+        kmer_data = {"AT": {"count": 1, "next_chars": {"G": 1}}}
+        write_results_to_file(kmer_data, str(output_file))
+        line = output_file.read_text().strip()
+        assert line == "AT 1 G:1"
+
+    def test_single_kmer_multiple_next_chars(self, tmp_path):
+        """Single kmer with multiple next chars should list all on one line"""
+        output_file = tmp_path / "output.txt"
+        kmer_data = {"AT": {"count": 2, "next_chars": {"C": 1, "G": 1}}}
+        write_results_to_file(kmer_data, str(output_file))
+        line = output_file.read_text().strip()
+        assert line == "AT 2 C:1 G:1"
+
+    def test_kmer_count_in_output(self, tmp_path):
+        """Total kmer count should appear in the output after the kmer"""
+        output_file = tmp_path / "output.txt"
+        kmer_data = {"AT": {"count": 3, "next_chars": {"G": 3}}}
+        write_results_to_file(kmer_data, str(output_file))
+        line = output_file.read_text().strip()
+        assert line == "AT 3 G:3"
+
+    # --- Sorting ---
+    def test_kmers_sorted_alphabetically(self, tmp_path):
+        """Kmers should appear in alphabetical order"""
         output_file = tmp_path / "output.txt"
         kmer_data = {
-            "TG": {"count": 1, "next_chars": {"A": 1}},
-            "AT": {"count": 2, "next_chars": {"G": 2}},
+            "TG": {"count": 1, "next_chars": {"C": 1}},
+            "AT": {"count": 1, "next_chars": {"G": 1}},
         }
-        
         write_results_to_file(kmer_data, str(output_file))
         lines = output_file.read_text().strip().split("\n")
-        
-        assert len(lines) == 2
-        assert lines[0].startswith("AT 2")  # AT comes before TG
-        assert lines[1].startswith("TG 1")
-        assert lines[0] == "AT 2 G:2"
-        assert lines[1] == "TG 1 A:1"
+        assert lines[0] == "AT 1 G:1"
+        assert lines[1] == "TG 1 C:1"
 
-    def test_empty_data_produces_empty_file(self, tmp_path):
-        """Ensures no data results in a clean, empty file."""
+    def test_next_chars_sorted_alphabetically(self, tmp_path):
+        """Next chars within a kmer's line should be sorted alphabetically"""
+        output_file = tmp_path / "output.txt"
+        kmer_data = {"AT": {"count": 2, "next_chars": {"G": 1, "C": 1}}}
+        write_results_to_file(kmer_data, str(output_file))
+        line = output_file.read_text().strip()
+        assert line == "AT 2 C:1 G:1"
+
+    # --- Multiple kmers ---
+    def test_multiple_kmers_each_on_own_line(self, tmp_path):
+        """Each kmer should be on its own line"""
+        output_file = tmp_path / "output.txt"
+        kmer_data = {
+            "AT": {"count": 1, "next_chars": {"G": 1}},
+            "TG": {"count": 1, "next_chars": {"C": 1}},
+        }
+        write_results_to_file(kmer_data, str(output_file))
+        lines = [l for l in output_file.read_text().strip().split("\n") if l]
+        assert len(lines) == 2
+
+    def test_multiple_kmers_correct_content(self, tmp_path):
+        """Multiple kmers should each have correct count and next chars"""
+        output_file = tmp_path / "output.txt"
+        kmer_data = {
+            "AT": {"count": 2, "next_chars": {"G": 2}},
+            "TG": {"count": 1, "next_chars": {"C": 1}},
+        }
+        write_results_to_file(kmer_data, str(output_file))
+        lines = output_file.read_text().strip().split("\n")
+        assert lines[0] == "AT 2 G:2"
+        assert lines[1] == "TG 1 C:1"
+
+    # --- Edge cases ---
+    def test_empty_kmer_data(self, tmp_path):
+        """Empty kmer_data should produce an empty file"""
         output_file = tmp_path / "output.txt"
         write_results_to_file({}, str(output_file))
         assert output_file.read_text() == ""
+
+    def test_high_frequency_counts(self, tmp_path):
+        """Should handle high frequency counts correctly"""
+        output_file = tmp_path / "output.txt"
+        kmer_data = {"AT": {"count": 100, "next_chars": {"G": 60, "C": 40}}}
+        write_results_to_file(kmer_data, str(output_file))
+        line = output_file.read_text().strip()
+        assert line == "AT 100 C:40 G:60"
